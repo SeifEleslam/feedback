@@ -1,14 +1,23 @@
 import { useState, useEffect } from "react";
-import { useForm, ValidationError, ExtraData } from "@formspree/react";
+import { useForm } from "@formspree/react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import "./Images/bg-form.png";
 
 export default function ContactForm() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    knowMe: false,
+    behaviorRate: 0,
+    behaviorMessage: "",
+    frontRate: 0,
+    frontMessage: "",
+  });
   const [state, handleSubmit] = useForm("xnqrdyny");
   const inputClass =
     "overflow-hidden focus:placeholder-white text-gray-200 px-1 m-5 border-b-2 border-gray-600 outline-none placeholder-[#8D8DAA] bg-transparent w-3/4 max-w-[250px]";
   const cardClass =
-    "overflow-hidden bg-[url('./Images/bg-form.png')] bg-cover hover:animate-waving-hand rounded shadow-xl p-2 bg-[#092031] w-3/4 mx-auto my-20";
+    "overflow-hidden bg-[url('./Images/bg-form.png')] bg-cover hover:animate-waving-hand rounded shadow-xl p-2 bg-[#092031] w-full mx-auto my-20";
   const buttonClass =
     "overflow-hidden z-10 cursor-pointer shadow-lg duration-200 hover:-translate-y-1 m-2 border-2 border-[#8D8DAA] text-[#092031] p-1 rounded";
   const stepClass =
@@ -16,34 +25,68 @@ export default function ContactForm() {
   const formClass = "items-center p-2 text-center w-full overflow-hidden";
   const form = [0, 1, 2];
   const [curr, setCurr] = useState(0);
-  const [notify, setNotify] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    knowMe: false,
-    behaviorRate: 0,
-    behaviorMessage: "",
-  });
   const [hover, setHover] = useState(0);
+  const [hover1, setHover1] = useState(0);
   const [parent0] = useAutoAnimate<HTMLDivElement>();
   const [animate, setAnimate] = useState<boolean[]>([true, false, false]);
+
   const nextForm = (n: number) => {
     let items = [...animate];
-    if (curr + n > form.length - 1 || curr + n < 0) return false;
-    items[curr] = false;
-    items[curr + n] = true;
-    if (curr + n === 0) {
-      document.getElementById("back")?.classList.add("invisible", "opacity-0");
-    } else if (curr === 0) {
-      document
-        .getElementById("back")
-        ?.classList.remove("invisible", "opacity-0");
-    }
-    setCurr(curr + n);
-    setAnimate(items);
-  };
+    if (curr + n < -1) return false;
 
+    if (curr === form.length - 1 && n > 0 && validated(curr)) {
+      onSubmit();
+      return;
+    }
+
+    if (n < 0 || validated(curr)) {
+      items[curr] = false;
+      items[curr + n] = true;
+      if (curr + n === 0) {
+        document
+          .getElementById("back")
+          ?.classList.add("invisible", "opacity-0");
+      } else if (curr === 0) {
+        document
+          .getElementById("back")
+          ?.classList.remove("invisible", "opacity-0");
+      }
+      if (curr + n === form.length - 1) {
+        document.getElementById("next")!.innerHTML = "submit";
+      } else if (curr === form.length - 1 && n < 0) {
+        document.getElementById("next")!.innerHTML =
+          'nExt <span class="inline-block duration-200 group-hover:translate-x-1">&#187;</span>';
+      }
+      setCurr(curr + n);
+      setAnimate(items);
+    }
+  };
+  const onSubmit = () => {
+    handleSubmit({
+      name: formData.name,
+      email: formData.email,
+      "know me": formData.knowMe.toString(),
+      "behavior rate": formData.knowMe ? formData.behaviorRate.toString() : "",
+      "behavior message": formData.knowMe
+        ? formData.behaviorMessage.toString()
+        : "",
+      "front-end rate": formData.frontRate.toString(),
+      "front-end message": formData.frontMessage.toString(),
+    });
+    nextForm(-form.length);
+    setFormData({
+      name: "",
+      email: "",
+      knowMe: false,
+      behaviorRate: 0,
+      behaviorMessage: "",
+      frontRate: 0,
+      frontMessage: "",
+    });
+    document.getElementById("navBtns")!.classList.add("opacity-0", "hidden");
+    document.getElementById("navSteps")!.classList.add("opacity-0", "hidden");
+  };
   const knowMeFunc = (b: boolean) => {
     const yesRadio = document.getElementById("knowMeYes") as HTMLInputElement;
     const noRadio = document.getElementById("knowMeNo") as HTMLInputElement;
@@ -60,6 +103,50 @@ export default function ContactForm() {
         ...prev,
         knowMe: false,
       }));
+    }
+  };
+
+  const notifyFunc = (val: string) => {
+    const note = document.getElementById("notify");
+    if (note!.classList.contains("opacity-0")) {
+      note!.innerHTML = val;
+      note!.classList.remove("opacity-0", "translate-y-5");
+      setTimeout(() => {
+        note!.classList.add("opacity-0", "translate-y-5");
+      }, 2000);
+    }
+  };
+
+  const validated = (n: number) => {
+    if (n === 0) {
+      const mailformat = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+      if (!(formData.email.match(mailformat) || formData.email === "")) {
+        notifyFunc("EmAIl nOt vAIld");
+        return false;
+      }
+      return true;
+    } else if (n === 1) {
+      if (formData.knowMe) {
+        if (formData.behaviorRate === 0) {
+          notifyFunc("plEAsE prOvIdE rAtE");
+          return false;
+        }
+        if (formData.behaviorMessage.length === 0) {
+          notifyFunc("plEAsE prOvIdE fEEdbAck");
+          return false;
+        }
+      }
+      return true;
+    } else if (n === 2) {
+      if (formData.frontRate === 0) {
+        notifyFunc("plEAsE prOvIdE rAtE");
+        return false;
+      }
+      if (formData.frontMessage.length === 0) {
+        notifyFunc("plEAsE prOvIdE fEEdbAck");
+        return false;
+      }
+      return true;
     }
   };
 
@@ -86,6 +173,17 @@ export default function ContactForm() {
             <hr className="border-[#8D8DAA] inset-x-0" />
           </div>
           <div ref={parent0}>
+            {state.succeeded && (
+              <div className="p-2 m-2 text-left text-[#8D8DAA]">
+                <p className="text-center">rEvIEw wAs sUbmIted sUccessfUlly</p>
+                <br />
+                <h1>thAnk yOU fOr yOUr rEvIEw</h1>
+                <p>
+                  I will read your review carefully and make sure that I get the
+                  most out of it.
+                </p>
+              </div>
+            )}
             {animate[0] && (
               <div id="0" className={formClass}>
                 <div className="w-full">
@@ -109,11 +207,6 @@ export default function ContactForm() {
                     }}
                     placeholder="nAmE"
                   />
-                  <ValidationError
-                    prefix="Name"
-                    field="name"
-                    errors={state.errors}
-                  />
                   <br />
                   <input
                     className={inputClass}
@@ -128,11 +221,6 @@ export default function ContactForm() {
                       }));
                     }}
                     placeholder="EmAIl"
-                  />
-                  <ValidationError
-                    prefix="Email"
-                    field="email"
-                    errors={state.errors}
                   />
                 </div>
               </div>
@@ -193,7 +281,6 @@ export default function ContactForm() {
                 <div className={buttonClass + " bg-[#8D8DAA] w-fit mx-auto"}>
                   {[...Array(5)].map((star, index) => {
                     index++;
-                    console.log(index);
                     return (
                       <span
                         style={{ transitionDelay: "" + index * 100 }}
@@ -222,31 +309,78 @@ export default function ContactForm() {
                   className={inputClass + " max-h-20"}
                   id="message"
                   name="expFeedBack"
-                  value={formData.name}
+                  value={formData.behaviorMessage}
                   onChange={(e) => {
                     setFormData((prev) => ({
                       ...prev,
-                      name: e.target.value,
+                      behaviorMessage: e.target.value,
                     }));
                   }}
                   placeholder="dEtAIlEd fEEdbAck of yOUr ExprIEncE"
                 />
-                <ValidationError
-                  prefix="Message"
-                  field="message"
-                  errors={state.errors}
-                />
                 <hr className="border-[#8D8DAA] inset-x-0 w-96 mx-auto" />
               </div>
             )}
-          </div>
+            {animate[2] && (
+              <div className={formClass}>
+                <h1 className="text-[#8D8DAA] p-1 text-lg">
+                  rAtE my frOnt End skIlls
+                </h1>
+                <div className={buttonClass + " bg-[#8D8DAA] w-fit mx-auto"}>
+                  {[...Array(5)].map((star, index) => {
+                    index++;
+                    return (
+                      <span
+                        style={{ transitionDelay: "" + index * 100 }}
+                        key={index}
+                        className={
+                          "duration-[650ms] p-2 " +
+                          (index <= (hover1 || formData.frontRate)
+                            ? "text-white"
+                            : "")
+                        }
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            frontRate: index,
+                          }))
+                        }
+                        onMouseEnter={() => setHover1(index)}
+                        onMouseLeave={() => setHover(formData.frontRate)}
+                      >
+                        <span className="">✦</span>
+                      </span>
+                    );
+                  })}
+                </div>
+                <textarea
+                  className={inputClass + " max-h-20"}
+                  id="message"
+                  name="expFeedBack"
+                  value={formData.frontMessage}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      frontMessage: e.target.value,
+                    }));
+                  }}
+                  placeholder="dEtAIlEd fEEdbAck of my frOnEnd wOrk"
+                />
+              </div>
+            )}
 
-          {animate[2] && <div></div>}
+            <div className="absolute inset-x-0 -bottom-20">
+              <p
+                id="notify"
+                className="duration-200 opacity-0 translate-5 rounded-sm shadow-2xl w-fit mx-auto p-2 text-white bg-red-900"
+              ></p>
+            </div>
+          </div>
 
           {/* <button type="submit" disabled={state.submitting}>
             Submit
           </button> */}
-          <ul>
+          <ul id="navSteps">
             {form.map((i) => (
               <span
                 className={stepClass + (i <= curr ? " bg-white" : " bg-black")}
@@ -254,7 +388,7 @@ export default function ContactForm() {
               ></span>
             ))}
           </ul>
-          <div className="flex justify-between p-2">
+          <div id="navBtns" className="flex justify-between p-2">
             <span
               id="back"
               className={
@@ -278,14 +412,6 @@ export default function ContactForm() {
               </span>
             </span>
           </div>
-          {notify && (
-            <div className="absolute inset-x-0 bottom-5">
-              <p
-                id="notify"
-                className=" rounded-sm shadow-2xl w-fit mx-auto p-2 text-white bg-red-900"
-              ></p>
-            </div>
-          )}
         </div>
       </form>
     </div>
