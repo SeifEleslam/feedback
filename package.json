@@ -1,5 +1,6 @@
 {
   "name": "feedback",
+  "homepage": "https://seifeleslam.github.io/feedback",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
