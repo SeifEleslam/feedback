@@ -346,7 +346,7 @@ export default function ContactForm() {
                           }))
                         }
                         onMouseEnter={() => setHover1(index)}
-                        onMouseLeave={() => setHover(formData.frontRate)}
+                        onMouseLeave={() => setHover1(formData.frontRate)}
                       >
                         <span className="">✦</span>
                       </span>
